@@ -12,3 +12,5 @@ Limites: a sessão do cenário simulado não testa autenticação/autorização 
 JUnit e evidências nas falhas em reports/. CI automática em PR.
 
 Teste adicional da persistência com SDK simulado: `node qa/persistence.cjs` a partir da raiz. Valida conflito de revisão, fechamento do formulário antigo, falha de conexão e preservação do último estado confirmado.
+
+Teste de persistência independente: `node qa/persistence.cjs` na raiz. Simula o SDK para verificar gravação, rejeição de revisão antiga, fechamento do formulário antes da recarga e falha de conexão. Não executa regras do Firebase.

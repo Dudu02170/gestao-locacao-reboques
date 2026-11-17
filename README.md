@@ -21,6 +21,7 @@ Sistema web para uma locadora de reboques controlar **agenda, clientes, frota e 
 index.html                 tela única (login + área de gestão)
 domain.js                  regras de negócio puras (validações, pagamentos), sem dependência do Firebase
 app.js / weekly.js         painel, agenda e visão semanal
+bootstrap.js               inicialização após carregar os módulos
 management.js              clientes, veículos, frota, locações, retirada e devolução
 documents.js               ficha do cliente, conferência e anexos
 users.js                   gestão de usuários e perfis
@@ -53,3 +54,25 @@ JavaScript · HTML · CSS · Firebase Authentication · Cloud Firestore · Fireb
 ## Autor
 
 **Eduardo Consul** · [LinkedIn](https://www.linkedin.com/in/eduardo-consul/) · [GitHub](https://github.com/Dudu02170)
+
+## Qualidade e evolução
+
+O histórico registra melhorias pequenas, com descrição do problema e da validação. Esta versão de portfólio mantém configuração de exemplo e usa dados fictícios nos testes. A implantação do cliente é mantida separadamente.
+
+- **Interface:** 15 cenários de regressão em JavaScript e Selenium, com execução no GitHub Actions, relatório JUnit e evidências em falhas.
+- **Persistência:** teste sem navegador que simula o SDK Firebase, verificando gravação, conflito, recarga e fechamento do formulário antigo.
+- **Organização:** inicialização centralizada e remoção de implementações antigas substituídas pelas telas atuais.
+
+```bash
+# Teste de persistência, sem dependências adicionais
+node qa/persistence.cjs
+
+# Testes de interface (Node 22+ e Chrome)
+cd qa
+npm install
+npm test
+```
+
+Os testes com persistência simulada não comprovam autenticação, regras de segurança, uploads ou concorrência real do Firebase. Esses pontos exigem testes de integração separados.
+
+Veja [CHANGELOG.md](CHANGELOG.md) para os problemas corrigidos e os limites de cada entrega.
