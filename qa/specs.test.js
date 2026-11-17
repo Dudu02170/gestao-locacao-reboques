@@ -58,3 +58,43 @@ scenario('erro ao salvar mantem valores persistidos',async p=>{
  const s=await p.driver.executeScript('return window.__qaState()');
  assert.equal(s.fleet[0].half,50);assert.equal(await p.driver.executeScript('return window.__qaSaves.length'),0);
 });
+
+const adjacentReservations=[
+ ['devolucao coincide com a proxima retirada','2099-01-10T06:00','2099-01-10T07:00'],
+ ['retirada coincide com a devolucao anterior','2099-01-10T13:00','2099-01-10T14:00']
+];
+for(const [name,start,end] of adjacentReservations){
+ scenario(name+' permite reserva sem alterar a anterior',async p=>{
+  await open(p);
+  const original=await p.driver.executeScript('return window.__qaState().rentals[0]');
+  await p.click('#newRental');await p.element('#rf');await dates(p,start,end);
+  await p.click('#rf button.primary');
+  await p.driver.wait(async()=>await p.driver.executeScript('return window.__qaSaves.length===1'),10000);
+  const saved=await p.driver.executeScript('return window.__qaState()');
+  assert.equal(saved.rentals.length,2);
+  assert.deepEqual(saved.rentals[0],original,'reserva anterior deve ser preservada');
+  assert.equal(saved.rentals[1].start,start);assert.equal(saved.rentals[1].end,end);
+  assert.equal(saved.rentals[1].fleet,original.fleet);
+  assert.equal(saved.rentals[1].status,'Reservada');
+ });
+}
+const rejectedIntervals=[
+ ['sobreposicao de um minuto na retirada','2099-01-10T06:00','2099-01-10T07:01','já está reservado'],
+ ['sobreposicao de um minuto na devolucao','2099-01-10T12:59','2099-01-10T14:00','já está reservado'],
+ ['intervalo engloba reserva existente','2099-01-10T06:00','2099-01-10T14:00','já está reservado'],
+ ['devolucao igual a retirada','2099-01-11T07:00','2099-01-11T07:00','posterior à retirada'],
+ ['devolucao anterior a retirada','2099-01-11T13:00','2099-01-11T07:00','posterior à retirada']
+];
+for(const [name,start,end,error] of rejectedIntervals){
+ scenario(name+' rejeita sem persistir',async p=>{
+  await open(p);
+  const original=await p.driver.executeScript('return window.__qaState()');
+  await p.click('#newRental');await p.element('#rf');await dates(p,start,end);
+  await p.click('#rf button.primary');await p.waitText('#formError',error);
+  assert.equal(await p.driver.executeScript('return window.__qaSaves.length'),0);
+  assert.deepEqual(await p.driver.executeScript('return window.__qaState()'),original,
+   'tentativa rejeitada deve preservar o estado persistido');
+  assert.equal(await (await p.element('#rf [name="start"]')).getAttribute('value'),start);
+  assert.equal(await (await p.element('#rf [name="end"]')).getAttribute('value'),end);
+ });
+}
