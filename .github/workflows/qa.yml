@@ -25,6 +25,8 @@ jobs:
           install-chromedriver: true
       - name: Install test dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Persistence regression
+        run: node persistence.cjs
       - name: Selenium regression
         run: npm test
         env:
