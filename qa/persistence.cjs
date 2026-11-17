@@ -22,3 +22,11 @@ async function fixture(){
  await assert.rejects(()=>cloud.upload(123,'cnh',{type:'text/html',size:20}),/Selecione PDF/);
  console.log('PASS: initial empty state, successful save, stale edit rejection, rollback after failure, invalid upload rejection. Firebase SDK mocked; rules not exercised.');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// Navigation must not dispatch a second hashchange render over a fresh screen.
+{
+ let hash='',renders=0;const queued=[];const context={document:{querySelector(){return {}}},Date,Number,String,Math,localStorage:{getItem(){return null}},location:{get hash(){return hash},set hash(value){hash=value.startsWith('#')?value:'#'+value;queued.push(()=>{renders++})}},history:{pushState(_state,_title,value){hash=value}},console};
+ vm.createContext(context);vm.runInContext(readFileSync(__dirname+'/../app.js','utf8'),context);vm.runInContext('render=()=>{recordRender()}',Object.assign(context,{recordRender:()=>{renders++}}));
+ context.go('frota');queued.forEach(fn=>fn());assert.equal(renders,1,'Navigation must render exactly once');assert.equal(hash,'#frota');
+ console.log('PASS: navigation updates URL without queuing duplicate hashchange render.');
+}

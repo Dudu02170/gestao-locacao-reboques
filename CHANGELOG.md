@@ -16,6 +16,11 @@
 - Automação existente preservada: 15 cenários de reservas, limites de horário, busca, pagamentos e falha de persistência.
 - Testes usam dados fictícios. Nenhuma configuração, identidade visual ou informação do cliente foi importada.
 
+### Navegação sem renderização duplicada
+- O CI detectou referência obsoleta a um elemento durante a abertura da frota. A navegação atualizava o hash e renderizava imediatamente, e o evento hashchange renderizava a mesma tela novamente.
+- A navegação agora atualiza o histórico com pushState e renderiza uma vez. O tratamento de hashchange continua disponível para navegação pelo histórico e links.
+- Um teste adicional verifica o número de renderizações e a URL resultante.
+
 ### Limites conhecidos
 - A automação de interface usa persistência em memória nos cenários autenticados.
 - Este repositório ainda não inclui testes de regras, autenticação real, uploads nem concorrência entre sessões reais.
