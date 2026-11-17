@@ -47,8 +47,9 @@ async function start(){
    });
    committed=desired;revision++;el('#cloud-status').textContent='Dados salvos na nuvem';
   }catch(e){
+   closeModal();
    try{await load()}catch{lock();message('Conexão interrompida','Recarregue a página e entre novamente para consultar os dados atualizados.');}
-   throw Error(errorText(e));
+   const failure=Error(errorText(e));failure.code=e.message==='CONFLICT'?'stale-edit':e.code;throw failure;
   }finally{saving(false)}
  },async upload(clientId,kind,file){
   if(!window.APP_DOCUMENTS_ENABLED)throw Error('O envio de documentos ainda não foi ativado.');
