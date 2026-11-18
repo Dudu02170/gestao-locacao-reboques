@@ -98,3 +98,43 @@ for(const [name,start,end,error] of rejectedIntervals){
   assert.equal(await (await p.element('#rf [name="end"]')).getAttribute('value'),end);
  });
 }
+
+scenario('reserva paga exige estorno antes de cancelar e preserva trilha financeira',async p=>{
+ await open(p);const original=await p.driver.executeScript('return window.__qaState()');
+ await detail(p);await p.click('button[onclick="cancelRental(100)"]');
+ await p.waitText('#modal','Registre a devolução desse valor antes de cancelar');
+ assert.equal(await p.driver.executeScript('return window.__qaSaves.length'),0);
+ assert.deepEqual(await p.driver.executeScript('return window.__qaState()'),original);
+ await p.click('button[onclick="payment(100,true)"]');
+ await p.fill('#pay [name="amount"]',20);await p.fill('#pay [name="note"]','Estorno fictício QA');
+ await p.click('#pay input[type="checkbox"]');await p.click('#pay button.primary');
+ await p.driver.wait(()=>p.driver.executeScript('return window.__qaSaves.length===1'),10000);
+ const refunded=await p.driver.executeScript('return window.__qaState().rentals[0]');
+ assert.equal(refunded.paid,0);assert.equal(refunded.status,'Reservada');
+ assert.equal(refunded.price,original.rentals[0].price);
+ assert.deepEqual(refunded.payments.map(x=>[x.kind,x.amount]),[['saldo-anterior',20],['estorno',20]]);
+ assert.equal(refunded.payments.at(-1).note,'Estorno fictício QA');
+ assert.equal(refunded.payments.at(-1).method,'Pix');
+ await p.click('button[onclick="cancelRental(100)"]');
+ await p.fill('#cancelForm [name="reason"]','Cancelamento fictício QA');
+ await p.click('#cancelForm button.primary');
+ await p.driver.wait(()=>p.driver.executeScript('return window.__qaSaves.length===2'),10000);
+ const cancelled=await p.driver.executeScript('return window.__qaState()');
+ assert.equal(cancelled.rentals.length,1,'cancelamento mantém o histórico da reserva');
+ assert.equal(cancelled.rentals[0].status,'Cancelada');
+ assert.equal(cancelled.rentals[0].cancelReason,'Cancelamento fictício QA');
+ assert.equal(cancelled.rentals[0].paid,0);
+ assert.deepEqual(cancelled.rentals[0].payments,refunded.payments);
+ assert.deepEqual(cancelled.clients,original.clients);assert.deepEqual(cancelled.fleet,original.fleet);
+});
+scenario('estorno superior ao recebido bloqueia formulario sem gravar',async p=>{
+ await open(p);const original=await p.driver.executeScript('return window.__qaState()');
+ await detail(p);await p.click('button[onclick="payment(100,true)"]');
+ await p.fill('#pay [name="amount"]',21);await p.fill('#pay [name="note"]','Tentativa fictícia QA');
+ await p.click('#pay input[type="checkbox"]');await p.click('#pay button.primary');
+ assert.equal(await p.driver.executeScript('return document.querySelector("#pay [name=amount]").validity.rangeOverflow'),true);
+ assert.equal(await p.driver.executeScript('return document.querySelector("#pay").checkValidity()'),false);
+ assert.equal(await p.driver.executeScript('return window.__qaSaves.length'),0);
+ assert.deepEqual(await p.driver.executeScript('return window.__qaState()'),original,
+  'estorno rejeitado não deve mudar saldo nem pagamentos');
+});
