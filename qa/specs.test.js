@@ -112,7 +112,6 @@ scenario('reserva paga exige estorno antes de cancelar e preserva trilha finance
  const refunded=await p.driver.executeScript('return window.__qaState().rentals[0]');
  assert.equal(refunded.paid,0);assert.equal(refunded.status,'Reservada');
  assert.equal(refunded.price,original.rentals[0].price);
- assert.deepEqual(refunded.payments.map(x=>[x.kind,x.amount]),[['saldo-anterior',20],['estorno',20]]);
  assert.equal(refunded.payments.at(-1).note,'Estorno fictício QA');
  assert.equal(refunded.payments.at(-1).method,'Pix');
  await p.click('button[onclick="cancelRental(100)"]');
@@ -126,6 +125,12 @@ scenario('reserva paga exige estorno antes de cancelar e preserva trilha finance
  assert.equal(cancelled.rentals[0].paid,0);
  assert.deepEqual(cancelled.rentals[0].payments,refunded.payments);
  assert.deepEqual(cancelled.clients,original.clients);assert.deepEqual(cancelled.fleet,original.fleet);
+ // Reconcile only after validating cancellation, so this defect does not block the lifecycle checks.
+ const ledger=cancelled.rentals[0].payments.reduce((sum,payment)=>
+  sum+(payment.kind==='estorno'?-payment.amount:payment.amount),0);
+ assert.equal(ledger,cancelled.rentals[0].paid,
+  'QA-REB-001: a soma líquida da trilha deve reconciliar com o saldo recebido após cancelar');
+ assert.deepEqual(refunded.payments.map(x=>[x.kind,x.amount]),[['saldo-anterior',20],['estorno',20]]);
 });
 scenario('estorno superior ao recebido bloqueia formulario sem gravar',async p=>{
  await open(p);const original=await p.driver.executeScript('return window.__qaState()');
