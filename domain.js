@@ -26,7 +26,7 @@ const Rules={
  if(!['Pix','Dinheiro','Cartão','Transferência'].includes(method))throw Error('Escolha a forma de pagamento.');
  const cents=this.cents(amount),paid=this.cents(r.paid),price=this.cents(r.price);
  if(cents>(refund?paid:price-paid))throw Error(refund?'O estorno não pode exceder o valor recebido.':'O pagamento não pode exceder o saldo pendente.');
- if(!r.payments)r.payments=paid?[{id:this.id(),kind:'saldo-anterior',amount:paid/100,method:r.method||'Não informado',at:null,by:null}]:[];
+ if(!r.payments||r.payments.length===0)r.payments=paid?[{id:this.id(),kind:'saldo-anterior',amount:paid/100,method:r.method||'Não informado',at:null,by:null}]:[];
  r.payments.push({id:this.id(),kind:refund?'estorno':'recebimento',amount:cents/100,method,at:new Date().toISOString(),by:actor});
  r.paid=(paid+(refund?-cents:cents))/100;
  }
